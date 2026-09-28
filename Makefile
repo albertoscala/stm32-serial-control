@@ -1,7 +1,7 @@
 CC = arm-none-eabi-gcc
 FLAGS = -Wall -mthumb -mfloat-abi=soft -nostdlib -ffreestanding -specs=nosys.specs
 ARCH = -mcpu=cortex-m4
-SRC = src/main.c
+SRC = src/*
 BIN = bin/firmware.elf
 LINKER = linker.ld
 
