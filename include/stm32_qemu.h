@@ -4,22 +4,22 @@
 
 // USART
 
-#define RCC_APB2ENR   (*(volatile uint32_t *)0x40023844)
-#define USART1_SR     (*(volatile uint32_t *)0x40011000)
-#define USART1_DR     (*(volatile uint32_t *)0x40011004)
-#define USART1_BRR    (*(volatile uint32_t *)0x40011008)
-#define USART1_CR1    (*(volatile uint32_t *)0x4001100C)
+#define RCC_APB2ENR   (*(volatile uint32_t *)0x40023844)    // Clock enable register for APB2 peripherals
+#define USART1_SR     (*(volatile uint32_t *)0x40011000)    // Status register of the USART
+#define USART1_DR     (*(volatile uint32_t *)0x40011004)    // Data register of the USART
+#define USART1_BRR    (*(volatile uint32_t *)0x40011008)    // Baud rate register for USART
+#define USART1_CR1    (*(volatile uint32_t *)0x4001100C)    // Control register for USART
 
-#define RCC_USART1EN  ((uint32_t)1 << 4)
-#define USART_SR_TXE  ((uint32_t)1 << 7)
-#define USART_SR_RXNE ((uint32_t)1 << 5)
+#define RCC_USART1EN  ((uint32_t)1 << 4)    // USART clock enable
+#define USART_SR_TXE  ((uint32_t)1 << 7)    // USART TX status register offset
+#define USART_SR_RXNE ((uint32_t)1 << 5)    // USART RX status register offset
 #define USART_CR1_UE  ((uint32_t)1 << 13)   // USART enable
 #define USART_CR1_TE  ((uint32_t)1 << 3)    // USART enable TX
 #define USART_CR1_RE  ((uint32_t)1 << 2)    // USART enable RX
 
 void usart_init(void)
 {
-    RCC_APB2ENR |= RCC_USART1EN;             /* clock on */
+    RCC_APB2ENR |= RCC_USART1EN;
     USART1_BRR   = 16000000 / 115200;        /* 16 MHz HSI, 115200 baud */
     USART1_CR1   = USART_CR1_UE | USART_CR1_TE | USART_CR1_RE;
 }
