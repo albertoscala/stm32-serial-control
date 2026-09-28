@@ -19,4 +19,6 @@ build:
 	$(CC) $(ARCH) $(FLAGS) -T $(LINKER) $(SRC) -o $(BIN)
 
 run:
-	qemu-system-arm -M netduinoplus2 -kernel $(BIN) -nographic -serial stdio -monitor none
+	qemu-system-arm -M netduinoplus2 -kernel $(BIN) -nographic \
+		-serial tcp::4444,server=on,wait=on \
+		-serial mon:stdio
