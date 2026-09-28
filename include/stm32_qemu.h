@@ -12,20 +12,28 @@
 
 #define RCC_USART1EN  ((uint32_t)1 << 4)
 #define USART_SR_TXE  ((uint32_t)1 << 7)
-#define USART_CR1_TE  ((uint32_t)1 << 3)
-#define USART_CR1_UE  ((uint32_t)1 << 13)
+#define USART_SR_RXNE ((uint32_t)1 << 5)
+#define USART_CR1_UE  ((uint32_t)1 << 13)   // USART enable
+#define USART_CR1_TE  ((uint32_t)1 << 3)    // USART enable TX
+#define USART_CR1_RE  ((uint32_t)1 << 2)    // USART enable RX
 
 void usart_init(void)
 {
     RCC_APB2ENR |= RCC_USART1EN;             /* clock on */
     USART1_BRR   = 16000000 / 115200;        /* 16 MHz HSI, 115200 baud */
-    USART1_CR1   = USART_CR1_UE | USART_CR1_TE;
+    USART1_CR1   = USART_CR1_UE | USART_CR1_TE | USART_CR1_RE;
 }
 
 void usart_putc(unsigned char c)
 {
     while (!(USART1_SR & USART_SR_TXE)) {}
     USART1_DR = (uint32_t)c;
+}
+
+unsigned char usart_getc()
+{
+    while (!(USART1_SR & USART_SR_RXNE)) {}
+    return (unsigned char)USART1_DR;
 }
 
 void usart_puts(const char* s)
