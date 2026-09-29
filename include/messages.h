@@ -17,7 +17,6 @@
 
 typedef enum {
     CMD_SSEGMENT = 1,
-    CMD_TEMP = 2,
 } command_t;
 
 // INTERFACES
@@ -87,9 +86,7 @@ bool validate_message(message_in_t* message_in)
             if (message_in->args[0] > 9) // args[0] is the digit to show: 0 -> 9
                 return false;
             return true;
-        case CMD_TEMP:
-            // TODO: Add
-            return true;
+        // TODO: Add more commands
         default:
             return false;
     }

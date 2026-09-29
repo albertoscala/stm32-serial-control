@@ -8,23 +8,33 @@
 
 // USART1 -> COMM
 
-#define RCC_APB2ENR   (*(volatile uint32_t *)0x40023844)    // Clock enable register for APB2 peripherals
-#define USART1_SR     (*(volatile uint32_t *)0x40011000)    // Status register of the USART1
-#define USART1_DR     (*(volatile uint32_t *)0x40011004)    // Data register of the USART1
-#define USART1_BRR    (*(volatile uint32_t *)0x40011008)    // Baud rate register for USART1
-#define USART1_CR1    (*(volatile uint32_t *)0x4001100C)    // Control register for USART1
+#define RCC_APB2ENR   (*(volatile uint32_t*)0x40023844)    // Clock enable register for APB2 peripherals
+#define USART1_SR     (*(volatile uint32_t*)0x40011000)    // Status register of the USART1
+#define USART1_DR     (*(volatile uint32_t*)0x40011004)    // Data register of the USART1
+#define USART1_BRR    (*(volatile uint32_t*)0x40011008)    // Baud rate register for USART1
+#define USART1_CR1    (*(volatile uint32_t*)0x4001100C)    // Control register for USART1
 
 #define RCC_USART1EN  ((uint32_t)1 << 4)                    // USART1 clock enable
 
 // USART2 -> DBG
 
-#define RCC_APB1ENR   (*(volatile uint32_t *)0x40023840)    // Clock enable register for APB1 peripherals
-#define USART2_SR     (*(volatile uint32_t *)0x40004400)    // Status register of the USART2
-#define USART2_DR     (*(volatile uint32_t *)0x40004404)    // Data register of the USART2
-#define USART2_BRR    (*(volatile uint32_t *)0x40004408)    // Baud rate register for USART2
-#define USART2_CR1    (*(volatile uint32_t *)0x4000440C)    // Control register for USART2
+#define RCC_APB1ENR   (*(volatile uint32_t*)0x40023840)    // Clock enable register for APB1 peripherals
+#define USART2_SR     (*(volatile uint32_t*)0x40004400)    // Status register of the USART2
+#define USART2_DR     (*(volatile uint32_t*)0x40004404)    // Data register of the USART2
+#define USART2_BRR    (*(volatile uint32_t*)0x40004408)    // Baud rate register for USART2
+#define USART2_CR1    (*(volatile uint32_t*)0x4000440C)    // Control register for USART2
 
 #define RCC_USART2EN  ((uint32_t)1 << 17)                   // USART2 clock enable
+
+// USART3 -> 7 SEGMENT DISPLAY
+
+// RCC_APB1ENR is shared between USART2 and USART3
+#define USART3_SR     (*(volatile uint32_t*)0x40004800)    // Status register of the USART3
+#define USART3_DR     (*(volatile uint32_t*)0x40004804)    // Data register of the USART3
+#define USART3_BRR    (*(volatile uint32_t*)0x40004808)    // Baud rate register for USART3
+#define USART3_CR1    (*(volatile uint32_t*)0x4000480C)    // Control register for USART3
+
+#define RCC_USART3EN  ((uint32_t)1 << 18)                   // USART3 clock enable (APB1)
 
 // FLAGS
 
@@ -48,6 +58,13 @@ void usart2_init()
     RCC_APB1ENR |= RCC_USART2EN;
     USART2_BRR   = 16000000 / 115200;        /* 16 MHz HSI, 115200 baud */
     USART2_CR1   = USART_CR1_UE | USART_CR1_TE;
+}
+
+void usart3_init()
+{
+    RCC_APB1ENR |= RCC_USART3EN;
+    USART3_BRR   = 16000000 / 115200;        /* 16 MHz HSI, 115200 baud */
+    USART3_CR1   = USART_CR1_UE | USART_CR1_TE;
 }
 
 // USART1 IO

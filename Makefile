@@ -21,4 +21,5 @@ build:
 run:
 	qemu-system-arm -M netduinoplus2 -kernel $(BIN) -nographic \
 		-serial tcp::4444,server=on,wait=on \
+		-serial tcp::8888,server=on,wait=off \
 		-serial mon:stdio

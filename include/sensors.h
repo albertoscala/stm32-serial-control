@@ -220,7 +220,19 @@ void update_display_state(uint8_t n)
     }
 }
 
-// TEMPERATURE
+void usart3_ssegment_state()
+{
+    for (int i = 0; i < COLUMNS * ROWS; i++)
+    {
+        while (!(USART3_SR & USART_SR_TXE)) {}
+        USART3_DR = (uint32_t)DISPLAY_STATE[i];
+        if (i % COLUMNS == COLUMNS - 1)
+        {
+            while (!(USART3_SR & USART_SR_TXE)) {}
+            USART3_DR = (uint32_t)'\n';
+        }
+    }
+}
 
 // ROUTER
 
@@ -230,6 +242,7 @@ bool exec_command(message_in_t* message_in)
     {
         case CMD_SSEGMENT:
             update_display_state(message_in->args[0]);
+            usart3_ssegment_state();
             return true;
         default:
             return false;
