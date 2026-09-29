@@ -40,7 +40,7 @@ typedef struct __attribute__((packed))
 
 // PARSING
 
-int read_message(message_in_t* message_in)
+void read_message(message_in_t* message_in)
 {
     uint8_t* raw = (uint8_t*)message_in;   /* fill the struct byte by byte */
     uint8_t n = 0;                         /* bytes collected so far */
@@ -64,7 +64,7 @@ int read_message(message_in_t* message_in)
 
         /* the struct is full: the last byte must be the end marker */
         if (raw[n - 1] == MESSAGE_IN_END)
-            return 1;                       /* valid message */
+            return;                         /* valid message */
 
         /* malformed: drop the first byte and look for the next start byte
            among the ones we already have, then keep collecting from there */
@@ -79,9 +79,31 @@ int read_message(message_in_t* message_in)
     }
 }
 
-int write_message(message_out_t* message_out)
+bool validate_message(message_in_t* message_in)
 {
-    return 0;
+    switch (message_in->cmd)
+    {
+        case CMD_SSEGMENT:
+            if (message_in->args[0] > 9) // args[0] is the digit to show: 0 -> 9
+                return false;
+            return true;
+        case CMD_TEMP:
+            // TODO: Add
+            return true;
+        default:
+            return false;
+    }
+}
+
+void write_message(message_out_t* message_out, bool result)
+{
+    message_out->start   = MESSAGE_OUT_START;
+    message_out->args[0] = result ? 1 : 0;
+    message_out->end     = MESSAGE_OUT_END;
+
+    const uint8_t* raw = (const uint8_t*)message_out;
+    for (uint8_t i = 0; i < sizeof(message_out_t); i++)
+        usart1_putbyte(raw[i]);
 }
 
 // DEBUG

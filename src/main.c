@@ -3,6 +3,7 @@
 #include <stdbool.h>
 
 #include "../include/messages.h"
+#include "../include/sensors.h"
 
 // .data section labels
 extern uint32_t _sidata, _sdata, _edata;
@@ -36,18 +37,22 @@ void main()
 
     usart2_init();
 
-    message_in_t msg;
+    message_in_t msg_in;
+    message_out_t msg_out;
+    bool result = false;
     while (true) 
     {
         // Read message
-        read_message(&msg);
+        read_message(&msg_in);
 
         // Debug
-        usart2_dbg_msg_in(&msg);
+        usart2_dbg_msg_in(&msg_in);
 
-        // Exec message
-
+        // Validate and Exec message 
+        result = validate_message(&msg_in) && exec_command(&msg_in);
+        
         // Write response
-
+        msg_in.cmd = msg_out.cmd;
+        write_message(&msg_out, result);
     }
 }
