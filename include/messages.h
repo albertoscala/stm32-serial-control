@@ -5,13 +5,20 @@
 
 #include "stm32_qemu.h"
 
+#include "sha256.h"
+#include "hmac.h"
+#include "secrets.h"
+
 #define MESSAGE_IN_START    ((uint8_t)0xAA)
 #define MESSAGE_IN_END      ((uint8_t)0xFF)
 
 #define MESSAGE_OUT_START    ((uint8_t)0x55)
 #define MESSAGE_OUT_END      ((uint8_t)0x99)
 
-#define ARGS_SIZE 8
+#define ARGS_SIZE       8
+#define COUNTER_SIZE    4
+#define HMAC_SIZE       16
+
 
 // COMMANDS
 
@@ -26,6 +33,8 @@ typedef struct __attribute__((packed))
     uint8_t start;
     uint8_t cmd;
     uint8_t args[ARGS_SIZE];
+    uint8_t counter[COUNTER_SIZE];
+    uint8_t hmac[HMAC_SIZE];
     uint8_t end;
 } message_in_t;
 
@@ -38,6 +47,15 @@ typedef struct __attribute__((packed))
 } message_out_t;
 
 // PARSING
+
+void compute_hmac(const uint8_t* cmd, uint8_t tag[HMAC_SIZE])
+{
+    uint8_t full[SIZE_OF_SHA_256_HASH];
+
+    hmac_sha256(KEY, sizeof(KEY), cmd, 1 + ARGS_SIZE + COUNTER_SIZE, full);
+    for (int i = 0; i < HMAC_SIZE; i++)
+        tag[i] = full[i];
+}
 
 void read_message(message_in_t* message_in)
 {
@@ -80,6 +98,17 @@ void read_message(message_in_t* message_in)
 
 bool validate_message(message_in_t* message_in)
 {
+    // Auth with HMAC
+    uint8_t tag[HMAC_SIZE];
+    uint8_t diff = 0;
+
+    compute_hmac(&message_in->cmd, tag);
+    for (int i = 0; i < HMAC_SIZE; i++)       /* constant-time compare */
+        diff |= tag[i] ^ message_in->hmac[i];
+    if (diff != 0)
+        return false;
+
+    // Validating the message content
     switch (message_in->cmd)
     {
         case CMD_SSEGMENT:
