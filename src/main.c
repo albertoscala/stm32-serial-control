@@ -48,8 +48,9 @@ void main()
         read_message(&msg_in);
 
         // Debug
+#ifdef DEBUG
         usart2_dbg_msg_in(&msg_in);
-
+#endif
         // Validate and Exec message 
         result = validate_message(&msg_in) && exec_command(&msg_in);
         

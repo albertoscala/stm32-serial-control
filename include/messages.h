@@ -19,6 +19,7 @@
 #define COUNTER_SIZE    4
 #define HMAC_SIZE       16
 
+static uint32_t last_counter = 0;
 
 // COMMANDS
 
@@ -47,6 +48,14 @@ typedef struct __attribute__((packed))
 } message_out_t;
 
 // PARSING
+
+static uint32_t get_counter(const message_in_t* m)
+{
+    return (uint32_t)m->counter[0]
+         | (uint32_t)m->counter[1] << 8
+         | (uint32_t)m->counter[2] << 16
+         | (uint32_t)m->counter[3] << 24;   /* pick an endianness and document it */
+}
 
 void compute_hmac(const uint8_t* cmd, uint8_t tag[HMAC_SIZE])
 {
@@ -102,10 +111,18 @@ bool validate_message(message_in_t* message_in)
     uint8_t tag[HMAC_SIZE];
     uint8_t diff = 0;
 
+    // Recompute hmac
     compute_hmac(&message_in->cmd, tag);
-    for (int i = 0; i < HMAC_SIZE; i++)       /* constant-time compare */
+
+    // Verify counter
+    for (int i = 0; i < HMAC_SIZE; i++)
         diff |= tag[i] ^ message_in->hmac[i];
     if (diff != 0)
+        return false;
+    
+    // Verify counter
+    uint32_t ctr = get_counter(message_in);
+    if (ctr <= last_counter)
         return false;
 
     // Validating the message content
@@ -114,6 +131,7 @@ bool validate_message(message_in_t* message_in)
         case CMD_SSEGMENT:
             if (message_in->args[0] > 9) // args[0] is the digit to show: 0 -> 9
                 return false;
+            last_counter = ctr;
             return true;
         // TODO: Add more commands
         default:
