@@ -2,6 +2,10 @@
 
 #include <stdint.h>
 
+// SPECS
+
+#define BAUD_RATE   ((uint32_t)(16000000 / 115200))     // 16 MHz HSI, 115200 baud
+
 // USART
 
 // 2 USART
@@ -49,21 +53,21 @@
 void usart1_init()
 {
     RCC_APB2ENR |= RCC_USART1EN;
-    USART1_BRR   = 16000000 / 115200;        /* 16 MHz HSI, 115200 baud */
+    USART1_BRR   = BAUD_RATE;
     USART1_CR1   = USART_CR1_UE | USART_CR1_TE | USART_CR1_RE;
 }
 
 void usart2_init()
 {
     RCC_APB1ENR |= RCC_USART2EN;
-    USART2_BRR   = 16000000 / 115200;        /* 16 MHz HSI, 115200 baud */
+    USART2_BRR   = BAUD_RATE;
     USART2_CR1   = USART_CR1_UE | USART_CR1_TE;
 }
 
 void usart3_init()
 {
     RCC_APB1ENR |= RCC_USART3EN;
-    USART3_BRR   = 16000000 / 115200;        /* 16 MHz HSI, 115200 baud */
+    USART3_BRR   = BAUD_RATE;
     USART3_CR1   = USART_CR1_UE | USART_CR1_TE;
 }
 
