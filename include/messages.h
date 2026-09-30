@@ -54,7 +54,7 @@ static uint32_t get_counter(const message_in_t* m)
     return (uint32_t)m->counter[0]
          | (uint32_t)m->counter[1] << 8
          | (uint32_t)m->counter[2] << 16
-         | (uint32_t)m->counter[3] << 24;   /* pick an endianness and document it */
+         | (uint32_t)m->counter[3] << 24; // Little endian
 }
 
 void compute_hmac(const uint8_t* cmd, uint8_t tag[HMAC_SIZE])
@@ -68,15 +68,15 @@ void compute_hmac(const uint8_t* cmd, uint8_t tag[HMAC_SIZE])
 
 void read_message(message_in_t* message_in)
 {
-    uint8_t* raw = (uint8_t*)message_in;   /* fill the struct byte by byte */
-    uint8_t n = 0;                         /* bytes collected so far */
+    uint8_t* raw = (uint8_t*)message_in;   // fill the struct byte by byte
+    uint8_t n = 0;                         // bytes collected so far
 
     while (true) 
     {
         uint8_t b = (uint8_t)usart1_getbyte();
 
         if (n == 0) {
-            /* not inside a frame: discard everything until a start byte */
+            // not inside a frame: discard everything until a start byte
             if (b != MESSAGE_IN_START)
                 continue;
             raw[n++] = b;
@@ -86,14 +86,16 @@ void read_message(message_in_t* message_in)
         raw[n++] = b;
 
         if (n < sizeof(message_in_t))
-            continue;                       /* frame not complete yet */
+            // frame not complete yet
+            continue;                       
 
-        /* the struct is full: the last byte must be the end marker */
+        // the struct is full: the last byte must be the end marker
         if (raw[n - 1] == MESSAGE_IN_END)
-            return;                         /* valid message */
+            // valid message
+            return;                         
 
-        /* malformed: drop the first byte and look for the next start byte
-           among the ones we already have, then keep collecting from there */
+        // malformed: drop the first byte and look for the next start byte
+        // among the ones we already have, then keep collecting from there
         uint8_t i = 1;
         while (i < n && raw[i] != MESSAGE_IN_START)
             i++;
