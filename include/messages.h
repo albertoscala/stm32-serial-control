@@ -141,10 +141,10 @@ bool validate_message(message_in_t* message_in)
     }
 }
 
-void write_message(message_out_t* message_out, bool result)
+void write_message(message_out_t* message_out)
 {
     message_out->start   = MESSAGE_OUT_START;
-    message_out->args[0] = result ? 1 : 0;
+    message_out->args[0] = 1;
     message_out->end     = MESSAGE_OUT_END;
 
     const uint8_t* raw = (const uint8_t*)message_out;
