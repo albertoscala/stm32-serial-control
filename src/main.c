@@ -10,7 +10,7 @@ extern uint32_t _sidata, _sdata, _edata;
 // .bss section labels
 extern uint32_t _sbss, _ebss;
 
-void init_data()
+static inline void init_data()
 {
     // Copy .data from FLASH to RAM
     uint32_t* ssrc = &_sidata;
@@ -19,7 +19,7 @@ void init_data()
         *(sdst++) = *(ssrc++);
 }
 
-void init_bss()
+static inline void init_bss()
 {
     // Zeroing the .bss
     uint32_t* sbss = &_sbss;
@@ -40,22 +40,19 @@ void main()
     usart3_init();
 
     message_in_t msg_in;
-    message_out_t msg_out;
     while (true) 
     {
         // Read message
         read_message(&msg_in);
 
         // Debug
-#ifdef DEBUG
         usart2_dbg_msg_in(&msg_in);
-#endif
+
         // Validate and Exec message 
         if(validate_message(&msg_in) && exec_command(&msg_in))
         {
             // Write response
-            msg_out.cmd = msg_in.cmd;
-            write_message(&msg_out);
+            write_message(msg_in.cmd);
         }
     }
 }

@@ -1,3 +1,5 @@
+#pragma once
+
 #include "sha256.h"
 
 /* HMAC-SHA256 (RFC 2104). out receives 32 bytes. */

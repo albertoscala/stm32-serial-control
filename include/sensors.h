@@ -8,7 +8,7 @@
 #define ROWS    13
 
 // SEVEN SEGMENT
-static char DISPLAY_EMPTY[COLUMNS * ROWS] = {
+static const char DISPLAY_EMPTY[COLUMNS * ROWS] = {
     ' ', ' ', ' ', ' ', ' ', ' ',
     ' ', ' ', ' ', ' ', ' ', ' ',
     ' ', ' ', ' ', ' ', ' ', ' ',
@@ -24,7 +24,7 @@ static char DISPLAY_EMPTY[COLUMNS * ROWS] = {
     ' ', ' ', ' ', ' ', ' ', ' ', 
 }; 
 
-static char DISPLAY_ZERO[COLUMNS * ROWS] = {
+static const char DISPLAY_ZERO[COLUMNS * ROWS] = {
     ' ', ' ', ' ', ' ', ' ', ' ',
     ' ', ' ', '#', '#', ' ', ' ',
     ' ', '#', ' ', ' ', '#', ' ',
@@ -40,7 +40,7 @@ static char DISPLAY_ZERO[COLUMNS * ROWS] = {
     ' ', ' ', ' ', ' ', ' ', ' ', 
 };
 
-static char DISPLAY_ONE[COLUMNS * ROWS] = {
+static const char DISPLAY_ONE[COLUMNS * ROWS] = {
     ' ', ' ', ' ', ' ', ' ', ' ',
     ' ', ' ', ' ', ' ', ' ', ' ',
     ' ', ' ', ' ', ' ', '#', ' ',
@@ -56,7 +56,7 @@ static char DISPLAY_ONE[COLUMNS * ROWS] = {
     ' ', ' ', ' ', ' ', ' ', ' ', 
 }; 
 
-static char DISPLAY_TWO[COLUMNS * ROWS] = {
+static const char DISPLAY_TWO[COLUMNS * ROWS] = {
     ' ', ' ', ' ', ' ', ' ', ' ',
     ' ', ' ', '#', '#', ' ', ' ',
     ' ', ' ', ' ', ' ', '#', ' ',
@@ -72,7 +72,7 @@ static char DISPLAY_TWO[COLUMNS * ROWS] = {
     ' ', ' ', ' ', ' ', ' ', ' ', 
 }; 
 
-static char DISPLAY_THREE[COLUMNS * ROWS] = {
+static const char DISPLAY_THREE[COLUMNS * ROWS] = {
     ' ', ' ', ' ', ' ', ' ', ' ',
     ' ', ' ', '#', '#', ' ', ' ',
     ' ', ' ', ' ', ' ', '#', ' ',
@@ -88,7 +88,7 @@ static char DISPLAY_THREE[COLUMNS * ROWS] = {
     ' ', ' ', ' ', ' ', ' ', ' ', 
 };
 
-static char DISPLAY_FOUR[COLUMNS * ROWS] = {
+static const char DISPLAY_FOUR[COLUMNS * ROWS] = {
     ' ', ' ', ' ', ' ', ' ', ' ',
     ' ', ' ', ' ', ' ', ' ', ' ',
     ' ', '#', ' ', ' ', '#', ' ',
@@ -104,7 +104,7 @@ static char DISPLAY_FOUR[COLUMNS * ROWS] = {
     ' ', ' ', ' ', ' ', ' ', ' ', 
 };
 
-static char DISPLAY_FIVE[COLUMNS * ROWS] = {
+static const char DISPLAY_FIVE[COLUMNS * ROWS] = {
     ' ', ' ', ' ', ' ', ' ', ' ',
     ' ', ' ', '#', '#', ' ', ' ',
     ' ', '#', ' ', ' ', ' ', ' ',
@@ -120,7 +120,7 @@ static char DISPLAY_FIVE[COLUMNS * ROWS] = {
     ' ', ' ', ' ', ' ', ' ', ' ', 
 };
 
-static char DISPLAY_SIX[COLUMNS * ROWS] = {
+static const char DISPLAY_SIX[COLUMNS * ROWS] = {
     ' ', ' ', ' ', ' ', ' ', ' ',
     ' ', ' ', '#', '#', ' ', ' ',
     ' ', '#', ' ', ' ', ' ', ' ',
@@ -136,7 +136,7 @@ static char DISPLAY_SIX[COLUMNS * ROWS] = {
     ' ', ' ', ' ', ' ', ' ', ' ', 
 };
 
-static char DISPLAY_SEVEN[COLUMNS * ROWS] = {
+static const char DISPLAY_SEVEN[COLUMNS * ROWS] = {
     ' ', ' ', ' ', ' ', ' ', ' ',
     ' ', ' ', '#', '#', ' ', ' ',
     ' ', ' ', ' ', ' ', '#', ' ',
@@ -152,7 +152,7 @@ static char DISPLAY_SEVEN[COLUMNS * ROWS] = {
     ' ', ' ', ' ', ' ', ' ', ' ', 
 };
 
-static char DISPLAY_EIGHT[COLUMNS * ROWS] = {
+static const char DISPLAY_EIGHT[COLUMNS * ROWS] = {
     ' ', ' ', ' ', ' ', ' ', ' ',
     ' ', ' ', '#', '#', ' ', ' ',
     ' ', '#', ' ', ' ', '#', ' ',
@@ -168,7 +168,7 @@ static char DISPLAY_EIGHT[COLUMNS * ROWS] = {
     ' ', ' ', ' ', ' ', ' ', ' ', 
 };
 
-static char DISPLAY_NINE[COLUMNS * ROWS] = {
+static const char DISPLAY_NINE[COLUMNS * ROWS] = {
     ' ', ' ', ' ', ' ', ' ', ' ',
     ' ', ' ', '#', '#', ' ', ' ',
     ' ', '#', ' ', ' ', '#', ' ',
@@ -184,7 +184,7 @@ static char DISPLAY_NINE[COLUMNS * ROWS] = {
     ' ', ' ', ' ', ' ', ' ', ' ', 
 };
 
-static char DISPLAY_ERROR[COLUMNS * ROWS] = {
+static const char DISPLAY_ERROR[COLUMNS * ROWS] = {
     ' ', ' ', ' ', ' ', ' ', ' ',
     ' ', ' ', '#', '#', ' ', ' ',
     ' ', '#', ' ', ' ', ' ', ' ',
@@ -200,27 +200,27 @@ static char DISPLAY_ERROR[COLUMNS * ROWS] = {
     ' ', ' ', ' ', ' ', ' ', ' ', 
 };
 
-char* DISPLAY_STATE = DISPLAY_EMPTY;
+static const char* const DISPLAY_DIGITS[10] = {
+    DISPLAY_ONE,
+    DISPLAY_TWO,
+    DISPLAY_THREE,
+    DISPLAY_FOUR,
+    DISPLAY_FIVE,
+    DISPLAY_SIX,
+    DISPLAY_SEVEN,
+    DISPLAY_EIGHT,
+    DISPLAY_NINE,
+    DISPLAY_ZERO,
+};
 
-void update_display_state(uint8_t n)
+static const char* DISPLAY_STATE = DISPLAY_EMPTY;
+
+static inline void update_display_state(uint8_t n)
 {
-    switch (n)
-    {
-        case 1: DISPLAY_STATE = DISPLAY_ONE; break;
-        case 2: DISPLAY_STATE = DISPLAY_TWO; break;
-        case 3: DISPLAY_STATE = DISPLAY_THREE; break;
-        case 4: DISPLAY_STATE = DISPLAY_FOUR; break;
-        case 5: DISPLAY_STATE = DISPLAY_FIVE; break;
-        case 6: DISPLAY_STATE = DISPLAY_SIX; break;
-        case 7: DISPLAY_STATE = DISPLAY_SEVEN; break;
-        case 8: DISPLAY_STATE = DISPLAY_EIGHT; break;
-        case 9: DISPLAY_STATE = DISPLAY_NINE; break;
-        case 0: DISPLAY_STATE = DISPLAY_ZERO; break;
-        default: DISPLAY_STATE = DISPLAY_ERROR; break;
-    }
+    DISPLAY_STATE = (n >= 0 || n <= 9) ? DISPLAY_DIGITS[n] : DISPLAY_ERROR;
 }
 
-void usart3_ssegment_state()
+static inline void usart3_ssegment_state()
 {
     for (int i = 0; i < COLUMNS * ROWS; i++)
     {
@@ -236,7 +236,7 @@ void usart3_ssegment_state()
 
 // ROUTER
 
-bool exec_command(message_in_t* message_in)
+static inline bool exec_command(const message_in_t* message_in)
 {
     switch (message_in->cmd)
     {
@@ -248,5 +248,6 @@ bool exec_command(message_in_t* message_in)
             return false;
     }
 
+    // unreachable
     return false;
 }

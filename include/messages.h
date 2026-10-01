@@ -49,7 +49,7 @@ typedef struct __attribute__((packed))
 
 // PARSING
 
-static uint32_t get_counter(const message_in_t* m)
+static inline uint32_t get_counter(const message_in_t* m)
 {
     return (uint32_t)m->counter[0]
          | (uint32_t)m->counter[1] << 8
@@ -57,7 +57,7 @@ static uint32_t get_counter(const message_in_t* m)
          | (uint32_t)m->counter[3] << 24; // Little endian
 }
 
-void compute_hmac(const uint8_t* cmd, uint8_t tag[HMAC_SIZE])
+static inline void compute_hmac(const uint8_t* cmd, uint8_t tag[HMAC_SIZE])
 {
     uint8_t full[SIZE_OF_SHA_256_HASH];
 
@@ -66,7 +66,7 @@ void compute_hmac(const uint8_t* cmd, uint8_t tag[HMAC_SIZE])
         tag[i] = full[i];
 }
 
-void read_message(message_in_t* message_in)
+static inline void read_message(message_in_t* message_in)
 {
     uint8_t* raw = (uint8_t*)message_in;   // fill the struct byte by byte
     uint8_t n = 0;                         // bytes collected so far
@@ -107,7 +107,7 @@ void read_message(message_in_t* message_in)
     }
 }
 
-bool validate_message(message_in_t* message_in)
+static inline bool validate_message(message_in_t* message_in)
 {
     // Auth with HMAC
     uint8_t tag[HMAC_SIZE];
@@ -141,20 +141,22 @@ bool validate_message(message_in_t* message_in)
     }
 }
 
-void write_message(message_out_t* message_out)
+static inline void write_message(command_t cmd)
 {
-    message_out->start   = MESSAGE_OUT_START;
-    message_out->args[0] = 1;
-    message_out->end     = MESSAGE_OUT_END;
+    message_out_t message_out;
+    message_out.start   = MESSAGE_OUT_START;
+    message_out.cmd     = cmd;
+    message_out.args[0] = 1;
+    message_out.end     = MESSAGE_OUT_END;
 
-    const uint8_t* raw = (const uint8_t*)message_out;
+    const uint8_t* raw = (const uint8_t*)&message_out;
     for (uint8_t i = 0; i < sizeof(message_out_t); i++)
         usart1_putbyte(raw[i]);
 }
 
 // DEBUG
 
-void usart2_dbg_msg_in(message_in_t* message_in)
+static inline void usart2_dbg_msg_in(const message_in_t* message_in)
 {
     usart2_puts("===== Message In Content =====\n");
     
@@ -174,6 +176,22 @@ void usart2_dbg_msg_in(message_in_t* message_in)
     }
     usart2_putc('\n');
     
+    usart2_puts("message_in_t.counter:  ");
+    for (int i = 0; i < COUNTER_SIZE; i++) 
+    {
+        usart2_puthexbyte(message_in->counter[i]);
+        usart2_putc(' ');
+    }
+    usart2_putc('\n');
+
+    usart2_puts("message_in_t.hmac:  ");
+    for (int i = 0; i < HMAC_SIZE; i++) 
+    {
+        usart2_puthexbyte(message_in->hmac[i]);
+        usart2_putc(' ');
+    }
+    usart2_putc('\n');
+
     usart2_puts("message_in_t.end: "); 
     usart2_puthexbyte(message_in->end); 
     usart2_putc('\n');

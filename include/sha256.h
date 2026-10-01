@@ -32,7 +32,7 @@
 
 #define TOTAL_LEN_LEN 8
 
-static void* xmemcpy(void* dest, const void* src, size_t num)
+static inline void* xmemcpy(void* dest, const void* src, size_t num)
 {
     uint8_t* bdest = (uint8_t*)dest;
     const uint8_t* bsrc = (const uint8_t*)src;
@@ -43,7 +43,7 @@ static void* xmemcpy(void* dest, const void* src, size_t num)
     return dest;
 }
 
-static void* xmemset(void* ptr, int value, size_t num)
+static inline void* xmemset(void* ptr, int value, size_t num)
 {
     uint8_t* bptr = (uint8_t*)ptr;
     for (size_t i=0; i < num; i++)
@@ -180,7 +180,7 @@ static inline void consume_chunk(uint32_t *h, const uint8_t *p)
  *
  * @note If either of the passed pointers is NULL, the results are unpredictable.
  */
-void sha_256_init(struct SHA256 *sha_256, uint8_t hash[SIZE_OF_SHA_256_HASH])
+static inline void sha_256_init(struct SHA256 *sha_256, uint8_t hash[SIZE_OF_SHA_256_HASH])
 {
 	sha_256->hash = hash;
 	sha_256->chunk_pos = sha_256->chunk;
@@ -215,7 +215,7 @@ void sha_256_init(struct SHA256 *sha_256, uint8_t hash[SIZE_OF_SHA_256_HASH])
  *
  * @note If either of the passed pointers is NULL, the results are unpredictable.
  */
-void sha_256_write(struct SHA256 *sha_256, const void *data, size_t len)
+static inline void sha_256_write(struct SHA256 *sha_256, const void *data, size_t len)
 {
 	sha_256->total_len += len;
 
@@ -266,7 +266,7 @@ void sha_256_write(struct SHA256 *sha_256, const void *data, size_t len)
  * @note Invoking this function for a calculation with no data (the writing function has never been invoked, or it only
  * has been invoked with empty data) is legal. It will calculate the SHA-256 value of the empty string.
  */
-uint8_t *sha_256_close(struct SHA256 *sha_256)
+static inline uint8_t *sha_256_close(struct SHA256 *sha_256)
 {
 	uint8_t *pos = sha_256->chunk_pos;
 	size_t space_left = sha_256->space_left;
@@ -327,7 +327,7 @@ uint8_t *sha_256_close(struct SHA256 *sha_256)
  *
  * @note See note about maximum data length for sha_256_write, as it applies for this function's len argument too.
  */
-void calc_sha_256(uint8_t hash[SIZE_OF_SHA_256_HASH], const void *input, size_t len)
+static inline void calc_sha_256(uint8_t hash[SIZE_OF_SHA_256_HASH], const void *input, size_t len)
 {
 	struct SHA256 sha_256;
 	sha_256_init(&sha_256, hash);
