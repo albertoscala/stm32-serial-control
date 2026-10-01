@@ -13,7 +13,7 @@ KEY = bytes([
 
 OK = (1, True)
 
-counter = 0
+counter = 1
 
 sock = socket.create_connection(("127.0.0.1", 4444))
 time.sleep(1)

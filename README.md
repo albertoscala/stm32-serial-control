@@ -2,21 +2,20 @@
 
 ## Il progetto
 
-Questo è un firmware bare-metal per STM32F405, in cui il compito del firmware è rispondere a comandi inviati sulla porta seriale ed eseguire il comando solo se è autentico. Tutto il resto viene ignorato.
+Questo è un firmware bare-metal per STM32F405 il cui compito è rispondere a comandi inviati sulla porta seriale ed eseguire il comando solo se è autentico. Tutto il resto viene ignorato.
 
-Il firmware è stato scritto e testato usando QEMU. Insieme al firmware c'è uno script Python per testare i vari scenari: messaggi corretti ed autentici, messaggi alterati, ripetuti e malformati.
+Il firmware è stato scritto e testato usando QEMU. Insieme al firmware c'è uno script Python per testare vari scenari: messaggi corretti ed autentici, messaggi alterati, ripetuti e malformati.
 
 Ogni comando è firmato con un HMAC-SHA256 calcolato con una chiave condivisa e porta con sé un contatore che impedisce di far accettare di nuovo messaggi vecchi. 
 
-Per lo SHA-256 ho usato un'implementazione esistente ([amosnier/sha-2](https://github.com/amosnier/sha-2)), che ho messo in un unico header e adattato per funzionare senza libc. L'HMAC sopra lo SHA-256 invece l'ho scritto io, sono poche righe, e l'ho verificato confrontandolo con il modulo `hmac` di Python.
+Per lo SHA-256 ho usato un'implementazione esistente ([amosnier/sha-2](https://github.com/amosnier/sha-2)), che ho reso header only e adattato per funzionare senza libc. L'HMAC sopra lo SHA-256 è stato scritto a mano e l'ho verificato confrontandolo con il modulo `hmac` di Python.
 
 ## Compilare e far girare
 
-Serve `arm-none-eabi-gcc`, `qemu-system-arm` e Python 3. Su Arch si installano con `make install`, su Debian/Ubuntu con:
+Serve `arm-none-eabi-gcc`, `qemu-system-arm` e Python 3. Su Arch si installano con `make install_arch`, su Rocky Linux con `make install_arch`.
 
-```sh
-sudo apt install gcc-arm-none-eabi libnewlib-arm-none-eabi qemu-system-arm
-```
+`qemu-system-arm` non è disponibile nei repository di Rocky: 
+installa [xPack QEMU Arm](https://xpack-dev-tools.github.io/qemu-arm-xpack/) e aggiungilo al `PATH`.
 
 Poi in un terminale:
 
@@ -42,10 +41,10 @@ Per uscire da QEMU `Ctrl-A` e poi `X`. Lo script parte sempre dal contatore 1, q
 
 ### Perché bare-metal
 
-La motivazione della scelta del bare-metal è stata quella per la semplicità di realizzazione. 
-Questa è la prima volta che scrivo su piattaforma STM32, in precedenza ho usato RISCV sempre bare-metal, quindi avevo già conoscenze di QEMU e programmazione senza RTOS/OS, per velocizzare il tutto ho preferito avere controllo su tutto, dal layout della memoria alle implementazioni di alto livello.
+La motivazione della scelta del bare-metal è stata fatta per la semplicità. 
+Questa è la prima volta che scrivo per STM32, in precedenza ho usato RISCV sempre bare-metal, quindi avevo già conoscenze di QEMU e programmazione senza RTOS/OS, per velocizzare il tutto ho preferito avere controllo su tutto, dal layout della memoria alle implementazioni di alto livello.
 
-Il firmware fa una cosa alla volta, quindi uno scheduler non mi serviva. Il prezzo è che la seriale è letta in polling: su una scheda vera, mentre il firmware calcola l'HMAC, potrebbe perdere dei byte. In QEMU non succede. Con più tempo userei gli interrupt e un buffer circolare.
+Il firmware fa una cosa sola e iin sequenza, quindi uno scheduler non mi serviva. Il prezzo è che la seriale è letta in polling: su una scheda vera, mentre il firmware calcola l'HMAC, potrebbe perdere dei byte. In QEMU non succede. Con più tempo userei gli interrupt e un buffer circolare e probabilemente avrei messo tutto in pipeline con una sequenza di SPSC (Single Producer Single Consumer).
 
 ### File
 
@@ -60,7 +59,7 @@ Il firmware fa una cosa alla volta, quindi uno scheduler non mi serviva. Il prez
 | `include/secrets.h` | La chiave condivisa |
 | `linker.ld` | Layout della memoria per flash e RAM |
 | `Makefile` | Preparazione, compilazione e run per QEMU |
-| `test/test_serial_control.py` | Script lato PC: comandi validi e attacchi |
+| `test/test_serial_control.py` | Script lato PC |
 
 ### Il loop principale
 
@@ -74,7 +73,7 @@ Tutto il firmware è un unico loop che si ripete all'infinito:
 
 Ogni comando è una struct senza padding di dimensione fissa, 31 byte:
 
-| Offset | Dimensione | Campo |
+| Offset | Dimensione (bit) | Campo |
 |-------:|-----------:|-------|
 | 0      | 1          | marcatore di inizio `0xAA` |
 | 1      | 1          | comando |
@@ -99,11 +98,11 @@ In questo modo si risincronizza dopo il rumore o un frame troncato. Il buffer ha
 
 I controlli vengono fatti in quest'ordine, e al primo che fallisce il frame viene scartato:
 
-1. **Autenticità.** Il firmware ricalcola l'HMAC su comando, argomenti e contatore con la chiave condivisa e lo confronta sempre per intero, così il tempo impiegato non dice quanti byte erano giusti.
-2. **Nuovo.** Il contatore deve essere strettamente maggiore dell'ultimo accettato (`last_counter`). Questo impedisce a qualcuno di registrare un frame e rimandarlo più tardi, finché il dispositivo non viene riavviato.
-3. **Contenuto.** Il comando deve essere uno di quelli definiti e gli argomenti devono essere nel range (per `CMD_SSEGMENT`, una cifra da 0 a 9).
+1. **Autenticità**: Il firmware ricalcola l'HMAC su comando, argomenti e contatore con la chiave condivisa e lo confronta sempre per intero.
+2. **Novità**: Il contatore deve essere strettamente maggiore dell'ultimo accettato (`last_counter`). Questo impedisce a qualcuno di registrare un frame e rimandarlo più tardi, finché il dispositivo non viene riavviato.
+3. **Contenuto**: Il comando deve essere uno di quelli definiti e gli argomenti devono essere giusti (es.: per `CMD_SSEGMENT`, una cifra da 0 a 9).
 
-`last_counter` viene aggiornato solo quando tutti e tre i controlli passano, così un frame scartato non "brucia" un valore del contatore.
+`last_counter` viene aggiornato solo quando tutti e tre i controlli passano, così un frame scartato non "brucia" un valore del contatore. 
 
 ## IO della scheda
 
@@ -115,7 +114,7 @@ Uso tre USART, ognuna con il suo compito:
 | USART2 | uscita      | Console di debug |
 | USART3 | uscita      | Il display a sette segmenti |
 
-Tenere il debug su una porta separata è stata una delle prime decisioni. Mischiare log e frame binari sulla stessa linea non era una buona idea, e QEMU permette di avere più seriali separate per questa scheda.
+Tenere il debug su una porta separata è stata una delle prime decisioni. Mischiare log e frame binari sulla stessa linea non era una buona idea, e QEMU permette di avere multiple seriali per questa scheda.
 
 ### Comandi
 
@@ -159,11 +158,11 @@ In *Robust Programming by Example*, Matt Bishop e Chip Elliott spiegano la diffe
 
 Ma quando un'interfaccia deve essere sicura, un errore dettagliato diventa un regalo per l'attaccante. Ogni risposta di errore diversa è un *indizio*, una domanda sì/no che l'attaccante può fare tutte le volte che vuole, finché non capisce come funziona il sistema all'interno. Per questo qui tutti i rifiuti sembrano uguali dall'esterno.
 
-### Quello che ho visto facendo reverse engineering
+### La mia esperienza personale rispetto all'approccio scelto
 
-Questo l'ho imparato soprattutto in prima persona. Quando ho lavorato per un periodo ad un reverse engineering di una GPU NVIDIA, i messaggi sbagliati inviati alla GPU non restituivano nulla, nessun errore o segnale. Da software non si poteva fare debug né capire cosa stesse facendo: quando un messaggio era sbagliato, niente ti diceva perché.
+Questo approccio l'ho visto in prima persona. Per un periodo ho lavorato ad un reverse engineering di una GPU NVIDIA per capire e comprendere quali fossero i messaggi che la scheda video riceveva e come mandarne alcuni manualmente. Facendo ricerche e testando sulla scheda target, ho scoperto che i messaggi sbagliati inviati alla GPU non restituivano nulla, nessun errore o segnale. Da software non si poteva fare debug né capire cosa stesse facendo: quando un messaggio era sbagliato, niente ti diceva perché.
 
-L'unico modo rimasto per capire cosa facesse la GPU era scendere a livello hardware. E questo, porta molte persone ad abbandonare il reversing e a cercare altre strade. È esattamente quello che ho sperimentato su pelle e che mi ha portato a scegliere questa strategia: se l'attaccante non riceve nessun indizio dal software, capire il firmware diventa molto più costoso.
+L'unico modo rimasto per capire cosa facesse la GPU era scendere a livello hardware. Questo, porta molte persone ad abbandonare il reversing e a cercare altre strade. È esattamente quello che ho sperimentato su pelle e che mi ha portato a scegliere questa strategia: se l'attaccante non riceve nessun indizio dal software, capire il firmware diventa molto più costoso.
 
 ## Modello di minaccia
 
@@ -177,27 +176,19 @@ Da cosa mi protegge il firmware:
 
 Da cosa invece no:
 
-- **Replay dopo un riavvio.** Il contatore sta in RAM e dopo un reset riparte da 0, quindi i vecchi frame tornano validi. È il problema più grosso.
-- **Chi legge la linea vede i comandi**, perché non sono cifrati. L'HMAC garantisce che sono autentici, non che sono segreti.
-- **Le risposte** si possono falsificare o bloccare, perché non sono firmate.
-- **Chi vuole bloccare il dispositivo** può sempre riempire la linea di spazzatura o tagliare il cavo.
-- **Attacchi fisici**, cioè dump della flash, glitch, side channel.
-- **La chiave è nel repository** e nello script Python. Per una demo va bene, per un prodotto no.
+- **Replay dopo un riavvio**: Il contatore sta in RAM e dopo un reset riparte da 0, quindi i vecchi frame tornano validi. È il problema più grosso.
+- **Le risposte**: si possono falsificare o bloccare, perché non sono firmate.
+- **Attacchi fisici**: dump della flash, glitch, side channel.
+- **La chiave è nel repository**: per una demo va bene, per un prodotto no.
 
 ### Dove terrei la chiave
 
 Adesso la chiave è compilata nel firmware, quindi chi fa il dump della flash ce l'ha. Su un dispositivo vero:
 
-- attiverei la read-out protection (RDP) dell'STM32. Il livello 1 però si può aggirare con il glitching, il livello 2 blocca il debug per sempre ed è il minimo per un prodotto.
-- userei una chiave diversa per ogni dispositivo, ricavata da una chiave master e dall'ID univoco del chip. Così se qualcuno estrae la chiave da un dispositivo, gli altri restano al sicuro.
-- se possibile, metterei la chiave in un secure element (tipo ATECC608), da cui non esce mai, e farei calcolare l'HMAC a lui.
+- attiverei la read-out protection (RDP) dell'STM32. Sarebbe una protezione hardware dell'STM32 che impedisce di leggere la flash (e quindi la chiave HMAC) tramite debugger o bootloader; il livello 1 è reversibile solo cancellando tutta la flash, il livello 2 è permanente e disabilita SWD/JTAG.
+- userei una chiave diversa per ogni dispositivo, ricavata da una chiave master e dall'ID univoco del chip. Così se qualcuno estrae la chiave da un dispositivo, gli altri restano al sicuro. Esattamente l'approccio di key diversification usato nelle smart card e nei sistemi di pagamento, dove la chiave master resta solo sul server e non viene mai scritta sui dispositivi.
 
 ## L'attacco che avevo in mente
-
-Ad essere sincero, mentre lo programmavo non avevo in mente un attacco preciso. Mi sono concentrato soprattutto su due principi:
-
-1. **Controlli rigorosi sull'IO.** Ogni byte che entra viene trattato come ostile. Il frame ha una dimensione fissa, i marcatori sono controllati in posizioni fisse, l'HMAC deve corrispondere, il contatore deve essere nuovo e gli argomenti devono essere nel range. Tutto quello che non passa viene scartato, e il dispositivo torna ad aspettare come se niente fosse.
-2. **Non dare mai un indizio all'attaccante.** L'attaccante non deve poter capire niente di quello che succede dentro il firmware: né dai messaggi di errore e né da risposte diverse.
 
 A lavoro finito ho provato a mettermi dalla parte dell'attaccante.
 
@@ -210,10 +201,10 @@ Immagino che il display mostri a un operatore un livello di allarme da 0 a 9. L'
 
 E in nessun caso riceve una risposta, quindi non capisce cosa l'ha fermato.
 
-Ci riesce invece se può togliere e ridare corrente: il contatore torna a 0 e il vecchio comando con la cifra 0 viene accettato. Oppure se mette le mani sulla scheda e legge la chiave dalla flash.
+Ci riesce se mette le mani sulla scheda e legge la chiave dalla flash.
 
 ## Cosa farei meglio
 
-- **Contatore dopo un reset.** Lo salverei nella backup SRAM dell'STM32 (che resta alimentata dalla batteria) o in flash. Oppure userei un challenge-response: il dispositivo genera un numero casuale e il client deve firmarlo insieme al comando, così non serve ricordarsi niente tra un riavvio e l'altro.
+- **Contatore dopo un reset**: userei un challenge-response: il dispositivo genera un numero casuale e il client deve firmarlo insieme al comando, così non serve ricordarsi niente tra un riavvio e l'altro.
 - **Conservare la chiave nel modo giusto**, come descritto sopra.
-- **Rallentare gli attaccanti.** Un meccanismo che rallenti o blocchi temporaneamente il dispositivo dopo un certo numero di messaggi non validi renderebbe il brute force ancora meno conveniente, anche se questo potrebbe portare a dover identificare gli utenti, così da non rallentare anche chi richiede le informazioni in maniera corretta.
+- **Rallentare gli attaccanti**: un meccanismo che rallenti o blocchi temporaneamente il dispositivo dopo un certo numero di messaggi non validi renderebbe il brute force ancora meno conveniente, anche se questo potrebbe portare a dover identificare gli utenti, così da non rallentare anche chi richiede le informazioni in maniera corretta.
